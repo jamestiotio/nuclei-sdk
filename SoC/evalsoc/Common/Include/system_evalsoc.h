@@ -102,6 +102,38 @@ extern void ECLIC_Init(void);
  */
 extern int32_t ECLIC_Register_IRQ(IRQn_Type IRQn, uint8_t shv, ECLIC_TRIGGER_Type trig_mode, uint8_t lvl, uint8_t priority, void* handler);
 
+/**
+ * \brief Register an core interrupt handler
+ */
+extern void Interrupt_Register_CoreIRQ(uint32_t irqn, unsigned long int_handler);
+
+/**
+ * \brief Register an plic external interrupt handler
+ */
+extern void Interrupt_Register_ExtIRQ(uint32_t irqn, unsigned long int_handler);
+
+/**
+ * \brief Get current exception handler for exception code EXCn
+ */
+extern unsigned long Exception_Get_EXC(uint32_t EXCn);
+
+/**
+ * \brief Common trap entry
+ */
+extern uint32_t core_trap_handler(unsigned long mcause, unsigned long sp);
+
+/**
+ * \brief Register a riscv core interrupt and register the handler
+ */
+extern int32_t Core_Register_IRQ(uint32_t irqn, void *handler);
+
+#if defined(__PLIC_PRESENT) && (__PLIC_PRESENT == 1)
+/**
+ * \brief  Register a specific plic interrupt and register the handler
+ */
+extern int32_t PLIC_Register_IRQ(uint32_t source, uint8_t priority, void *handler);
+#endif
+
 #if defined(__TEE_PRESENT) && (__TEE_PRESENT == 1)
 /**
  * \brief Register an exception handler for exception code EXCn of supervisor mode

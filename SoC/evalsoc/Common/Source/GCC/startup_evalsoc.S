@@ -39,6 +39,8 @@
 #endif
 .endm
 
+#if defined(INTMODE) && (INTMODE == INTMODE_PLIC)
+#else /* ECLIC Mode */
     .section .text.vtable
 
     .weak eclic_msip_handler
@@ -136,7 +138,7 @@ vector_base:
     DECLARE_INT_HANDLER     default_intexc_handler          /* 63: Interrupt 63 */
 
     .option pop
-
+#endif
 
     .section .text.init
     .globl _start
@@ -212,6 +214,21 @@ _start:
     csrs CSR_MMISC_CTL, t0
 #endif
 
+#if defined(INTMODE) && (INTMODE == INTMODE_PLIC)
+    /*
+     * Set Exception Entry MTVEC to early_exc_entry
+     * Due to settings above, Exception and NMI
+     * will share common entry.
+     * This early_exc_entry is only used during early
+     * boot stage before main
+     */
+    la t0, early_exc_entry
+    csrw CSR_MTVEC, t0
+
+    /* Set the interrupt processing mode to CLINT/PLIC mode */
+    li t0, 0x3f
+    csrc CSR_MTVEC, t0
+#else
     /*
      * Intialize ECLIC vector interrupt
      * base address mtvt to vector_base
@@ -243,6 +260,7 @@ _start:
     li t0, 0x3f
     csrc CSR_MTVEC, t0
     csrs CSR_MTVEC, 0x3
+#endif
 
     /* ===== Startup Stage 2 ===== */
 
@@ -348,6 +366,19 @@ __skip_init:
      */
     call _premain_init
 
+#if defined(INTMODE) && (INTMODE == INTMODE_PLIC)
+    /*
+     * When all initialization steps done
+     * set exception entry to correct exception
+     * entry and jump to main.
+     * And set the interrupt processing mode to
+     * CLINT/PLIC mode
+     */
+    la t0, trap_entry
+    csrw CSR_MTVEC, t0
+    li t0, 0x3f
+    csrc CSR_MTVEC, t0
+#else
     /*
      * When all initialization steps done
      * set exception entry to correct exception
@@ -360,6 +391,7 @@ __skip_init:
     li t0, 0x3f
     csrc CSR_MTVEC, t0
     csrs CSR_MTVEC, 0x3
+#endif
 
     /* BPU cold bringup need time, so enable BPU before enter to main */
     li t0, MMISC_CTL_BPU

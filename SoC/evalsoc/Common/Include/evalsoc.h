@@ -56,6 +56,10 @@ typedef enum {
     DOWNLOAD_MODE_MAX,
 } DownloadMode_Type;
 
+/* SoC Interrupt mode definition */
+#define INTMODE_ECLIC       0           /*!< Eclic interrupt mode */
+#define INTMODE_PLIC        1           /*!< Plic interrupt mode */
+
 /** \brief CPU Internal Region Information */
 typedef struct IRegion_Info {
     unsigned long iregion_base;         /*!< Internal region base address */
@@ -63,6 +67,7 @@ typedef struct IRegion_Info {
     unsigned long systimer_base;        /*!< system timer base address */
     unsigned long smp_base;             /*!< smp base address */
     unsigned long idu_base;             /*!< idu base address */
+    unsigned long plic_base;            /*!< plic base address */
 } IRegion_Info_Type;
 
 /* Simulation mode macros */
@@ -79,88 +84,6 @@ typedef struct IRegion_Info {
 #define SOC_EXTERNAL_MAP_TO_ECLIC_IRQn_OFFSET      19
 /* get evalsoc's External IRQn from ECLIC external IRQn which indexs from 19 */
 #define IRQn_MAP_TO_EXT_ID(IRQn)                   (IRQn - SOC_EXTERNAL_MAP_TO_ECLIC_IRQn_OFFSET)
-
-typedef enum IRQn {
-    /* =======================================  Nuclei Core Specific Interrupt Numbers  ======================================== */
-
-    Reserved0_IRQn            =   0,              /*!<  Internal reserved */
-    Reserved1_IRQn            =   1,              /*!<  Internal reserved */
-    Reserved2_IRQn            =   2,              /*!<  Internal reserved */
-    SysTimerSW_IRQn           =   3,              /*!<  System Timer SW interrupt for both M/S mode in ECLIC */
-    Reserved3_IRQn            =   4,              /*!<  Internal reserved */
-    Reserved4_IRQn            =   5,              /*!<  Internal reserved */
-    Reserved5_IRQn            =   6,              /*!<  Internal reserved */
-    SysTimer_IRQn             =   7,              /*!<  System Timer Interrupt for both M/S mode in ECLIC */
-    Reserved6_IRQn            =   8,              /*!<  Internal reserved */
-    Reserved7_IRQn            =   9,              /*!<  Internal reserved */
-    Reserved8_IRQn            =  10,              /*!<  Internal reserved */
-    Reserved9_IRQn            =  11,              /*!<  Internal reserved */
-    Reserved10_IRQn           =  12,              /*!<  Internal reserved */
-    Reserved11_IRQn           =  13,              /*!<  Internal reserved */
-    Reserved12_IRQn           =  14,              /*!<  Internal reserved */
-    Reserved13_IRQn           =  15,              /*!<  Internal reserved */
-    InterCore_IRQn            =  16,              /*!<  CIDU Inter Core Interrupt */
-    Reserved15_IRQn           =  17,              /*!<  Internal reserved */
-    Reserved16_IRQn           =  18,              /*!<  Internal reserved */
-
-    /* ===========================================  evalsoc Specific Interrupt Numbers  ========================================= */
-    /* ToDo: add here your device specific external interrupt numbers. 19~1023 is reserved number for user. Maxmum interrupt supported
-             could get from clicinfo.NUM_INTERRUPT. According the interrupt handlers defined in startup_Device.s
-             eg.: Interrupt for Timer#1       eclic_tim1_handler   ->   TIM1_IRQn */
-    SOC_INT19_IRQn           = 19,                /*!< Device Interrupt */
-    SOC_INT20_IRQn           = 20,                /*!< Device Interrupt */
-    SOC_INT21_IRQn           = 21,                /*!< Device Interrupt */
-    SOC_INT22_IRQn           = 22,                /*!< Device Interrupt */
-    SOC_INT23_IRQn           = 23,                /*!< Device Interrupt */
-    SOC_INT24_IRQn           = 24,                /*!< Device Interrupt */
-    SOC_INT25_IRQn           = 25,                /*!< Device Interrupt */
-    SOC_INT26_IRQn           = 26,                /*!< Device Interrupt */
-    SOC_INT27_IRQn           = 27,                /*!< Device Interrupt */
-    SOC_INT28_IRQn           = 28,                /*!< Device Interrupt */
-    SOC_INT29_IRQn           = 29,                /*!< Device Interrupt */
-    SOC_INT30_IRQn           = 30,                /*!< Device Interrupt */
-    SOC_INT31_IRQn           = 31,                /*!< Device Interrupt */
-    SOC_INT32_IRQn           = 32,                /*!< Device Interrupt */
-    SOC_INT33_IRQn           = 33,                /*!< Device Interrupt */
-    SOC_INT34_IRQn           = 34,                /*!< Device Interrupt */
-    SOC_INT35_IRQn           = 35,                /*!< Device Interrupt */
-    SOC_INT36_IRQn           = 36,                /*!< Device Interrupt */
-    SOC_INT37_IRQn           = 37,                /*!< Device Interrupt */
-    SOC_INT38_IRQn           = 38,                /*!< Device Interrupt */
-    SOC_INT39_IRQn           = 39,                /*!< Device Interrupt */
-    SOC_INT40_IRQn           = 40,                /*!< Device Interrupt */
-    SOC_INT41_IRQn           = 41,                /*!< Device Interrupt */
-    SOC_INT42_IRQn           = 42,                /*!< Device Interrupt */
-    SOC_INT43_IRQn           = 43,                /*!< Device Interrupt */
-    SOC_INT44_IRQn           = 44,                /*!< Device Interrupt */
-    SOC_INT45_IRQn           = 45,                /*!< Device Interrupt */
-    SOC_INT46_IRQn           = 46,                /*!< Device Interrupt */
-    SOC_INT47_IRQn           = 47,                /*!< Device Interrupt */
-    SOC_INT48_IRQn           = 48,                /*!< Device Interrupt */
-    SOC_INT49_IRQn           = 49,                /*!< Device Interrupt */
-    SOC_INT50_IRQn           = 50,                /*!< Device Interrupt */
-    SOC_INT51_IRQn           = 51,                /*!< Device Interrupt */
-    SOC_INT52_IRQn           = 52,                /*!< Device Interrupt */
-    SOC_INT53_IRQn           = 53,                /*!< Device Interrupt */
-    SOC_INT54_IRQn           = 54,                /*!< Device Interrupt */
-    SOC_INT55_IRQn           = 55,                /*!< Device Interrupt */
-    SOC_INT56_IRQn           = 56,                /*!< Device Interrupt */
-    SOC_INT57_IRQn           = 57,                /*!< Device Interrupt */
-    SOC_INT58_IRQn           = 58,                /*!< Device Interrupt */
-    SOC_INT59_IRQn           = 59,                /*!< Device Interrupt */
-    SOC_INT60_IRQn           = 60,                /*!< Device Interrupt */
-    SOC_INT61_IRQn           = 61,                /*!< Device Interrupt */
-    SOC_INT62_IRQn           = 62,                /*!< Device Interrupt */
-    SOC_INT63_IRQn           = 63,                /*!< Device Interrupt */
-    SOC_INT_MAX,
-} IRQn_Type;
-
-/* UART0 Interrupt */
-#define UART0_IRQn                                 SOC_INT51_IRQn
-/* QSPI Interrupt */
-#define QSPI0_IRQn                                 SOC_INT53_IRQn
-#define QSPI1_IRQn                                 SOC_INT54_IRQn
-#define QSPI2_IRQn                                 SOC_INT55_IRQn
 
 /* =========================================================================================================================== */
 /* ================                                  Exception Code Definition                                ================ */
@@ -231,6 +154,15 @@ extern volatile IRegion_Info_Type SystemIRegionInfo;
 
 //#define __ECLIC_INTCTLBITS        3                     /*!< Set to 1 - 8, the number of hardware bits are actually implemented in the clicintctl registers. */
 #define __ECLIC_INTNUM            64                    /*!< Set to 1 - 1024, total interrupt number of ECLIC Unit */
+
+#if defined(INTMODE) && (INTMODE == INTMODE_PLIC)
+#define __PLIC_PRESENT            1                     /*!< Set to 1 if PLIC is present */
+#else
+#define __PLIC_PRESENT            0                     /*!< Set to 1 if PLIC is present */
+#endif
+
+#define __PLIC_BASEADDR           SystemIRegionInfo.plic_base          /*!< Set to PLIC baseaddr of your device */
+#define __PLIC_INTNUM             44                    /*!< Set to 1 - 1024, total interrupt sources of PLIC Unit */
 #define __SYSTIMER_PRESENT        1                     /*!< Set to 1 if System Timer is present */
 #define __SYSTIMER_BASEADDR       SystemIRegionInfo.systimer_base          /*!< Set to SysTimer baseaddr of your device */
 //#define __SYSTIMER_HARTID         0                     /*!< Set this timer hartid if you have only 1 hart in your cpu, and you know the timer hartid, just set it */
@@ -327,6 +259,149 @@ extern volatile IRegion_Info_Type SystemIRegionInfo;
 #ifndef BOOT_HARTID
 #define BOOT_HARTID               0                     /*!< Choosen boot hart id in current cluster when in soc system, need to align with the value defined in startup_<Device>.S, should start from 0, taken the mhartid bit 0-7 value */
 #endif
+
+typedef enum IRQn {
+    /* =======================================  Nuclei Core Specific Interrupt Numbers  ======================================== */
+
+    Reserved0_IRQn            =   0,              /*!<  Internal reserved */
+    Reserved1_IRQn            =   1,              /*!<  Internal reserved */
+    Reserved2_IRQn            =   2,              /*!<  Internal reserved */
+    SysTimerSW_IRQn           =   3,              /*!<  System Timer SW interrupt for both M/S mode in ECLIC */
+    Reserved3_IRQn            =   4,              /*!<  Internal reserved */
+    Reserved4_IRQn            =   5,              /*!<  Internal reserved */
+    Reserved5_IRQn            =   6,              /*!<  Internal reserved */
+    SysTimer_IRQn             =   7,              /*!<  System Timer Interrupt for both M/S mode in ECLIC */
+    Reserved6_IRQn            =   8,              /*!<  Internal reserved */
+    Reserved7_IRQn            =   9,              /*!<  Internal reserved */
+    Reserved8_IRQn            =  10,              /*!<  Internal reserved */
+    Reserved9_IRQn            =  11,              /*!<  Internal reserved */
+    Reserved10_IRQn           =  12,              /*!<  Internal reserved */
+    Reserved11_IRQn           =  13,              /*!<  Internal reserved */
+    Reserved12_IRQn           =  14,              /*!<  Internal reserved */
+    Reserved13_IRQn           =  15,              /*!<  Internal reserved */
+    InterCore_IRQn            =  16,              /*!<  CIDU Inter Core Interrupt */
+    Reserved15_IRQn           =  17,              /*!<  Internal reserved */
+    Reserved16_IRQn           =  18,              /*!<  Internal reserved */
+
+    /* ===========================================  evalsoc Specific Interrupt Numbers  ========================================= */
+    /* ToDo: add here your device specific external interrupt numbers. 19~1023 is reserved number for user. Maxmum interrupt supported
+             could get from clicinfo.NUM_INTERRUPT. According the interrupt handlers defined in startup_Device.s
+             eg.: Interrupt for Timer#1       eclic_tim1_handler   ->   TIM1_IRQn */
+    SOC_INT19_IRQn           = 19,                /*!< Device Interrupt */
+    SOC_INT20_IRQn           = 20,                /*!< Device Interrupt */
+    SOC_INT21_IRQn           = 21,                /*!< Device Interrupt */
+    SOC_INT22_IRQn           = 22,                /*!< Device Interrupt */
+    SOC_INT23_IRQn           = 23,                /*!< Device Interrupt */
+    SOC_INT24_IRQn           = 24,                /*!< Device Interrupt */
+    SOC_INT25_IRQn           = 25,                /*!< Device Interrupt */
+    SOC_INT26_IRQn           = 26,                /*!< Device Interrupt */
+    SOC_INT27_IRQn           = 27,                /*!< Device Interrupt */
+    SOC_INT28_IRQn           = 28,                /*!< Device Interrupt */
+    SOC_INT29_IRQn           = 29,                /*!< Device Interrupt */
+    SOC_INT30_IRQn           = 30,                /*!< Device Interrupt */
+    SOC_INT31_IRQn           = 31,                /*!< Device Interrupt */
+    SOC_INT32_IRQn           = 32,                /*!< Device Interrupt */
+    SOC_INT33_IRQn           = 33,                /*!< Device Interrupt */
+    SOC_INT34_IRQn           = 34,                /*!< Device Interrupt */
+    SOC_INT35_IRQn           = 35,                /*!< Device Interrupt */
+    SOC_INT36_IRQn           = 36,                /*!< Device Interrupt */
+    SOC_INT37_IRQn           = 37,                /*!< Device Interrupt */
+    SOC_INT38_IRQn           = 38,                /*!< Device Interrupt */
+    SOC_INT39_IRQn           = 39,                /*!< Device Interrupt */
+    SOC_INT40_IRQn           = 40,                /*!< Device Interrupt */
+    SOC_INT41_IRQn           = 41,                /*!< Device Interrupt */
+    SOC_INT42_IRQn           = 42,                /*!< Device Interrupt */
+    SOC_INT43_IRQn           = 43,                /*!< Device Interrupt */
+    SOC_INT44_IRQn           = 44,                /*!< Device Interrupt */
+    SOC_INT45_IRQn           = 45,                /*!< Device Interrupt */
+    SOC_INT46_IRQn           = 46,                /*!< Device Interrupt */
+    SOC_INT47_IRQn           = 47,                /*!< Device Interrupt */
+    SOC_INT48_IRQn           = 48,                /*!< Device Interrupt */
+    SOC_INT49_IRQn           = 49,                /*!< Device Interrupt */
+    SOC_INT50_IRQn           = 50,                /*!< Device Interrupt */
+    SOC_INT51_IRQn           = 51,                /*!< Device Interrupt */
+    SOC_INT52_IRQn           = 52,                /*!< Device Interrupt */
+    SOC_INT53_IRQn           = 53,                /*!< Device Interrupt */
+    SOC_INT54_IRQn           = 54,                /*!< Device Interrupt */
+    SOC_INT55_IRQn           = 55,                /*!< Device Interrupt */
+    SOC_INT56_IRQn           = 56,                /*!< Device Interrupt */
+    SOC_INT57_IRQn           = 57,                /*!< Device Interrupt */
+    SOC_INT58_IRQn           = 58,                /*!< Device Interrupt */
+    SOC_INT59_IRQn           = 59,                /*!< Device Interrupt */
+    SOC_INT60_IRQn           = 60,                /*!< Device Interrupt */
+    SOC_INT61_IRQn           = 61,                /*!< Device Interrupt */
+    SOC_INT62_IRQn           = 62,                /*!< Device Interrupt */
+    SOC_INT63_IRQn           = 63,                /*!< Device Interrupt */
+    SOC_INT_MAX,
+
+#if defined(__PLIC_PRESENT) && (__PLIC_PRESENT == 1)
+    PLIC_INT0_IRQn           = 0,
+    PLIC_INT1_IRQn           = 1,
+    PLIC_INT2_IRQn           = 2,
+    PLIC_INT3_IRQn           = 3,
+    PLIC_INT4_IRQn           = 4,
+    PLIC_INT5_IRQn           = 5,
+    PLIC_INT6_IRQn           = 6,
+    PLIC_INT7_IRQn           = 7,
+    PLIC_INT8_IRQn           = 8,
+    PLIC_INT9_IRQn           = 9,
+    PLIC_INT10_IRQn           = 10,
+    PLIC_INT11_IRQn           = 11,
+    PLIC_INT12_IRQn           = 12,
+    PLIC_INT13_IRQn           = 13,
+    PLIC_INT14_IRQn           = 14,
+    PLIC_INT15_IRQn           = 15,
+    PLIC_INT16_IRQn           = 16,
+    PLIC_INT17_IRQn           = 17,
+    PLIC_INT18_IRQn           = 18,
+    PLIC_INT19_IRQn           = 19,
+    PLIC_INT20_IRQn           = 20,
+    PLIC_INT21_IRQn           = 21,
+    PLIC_INT22_IRQn           = 22,
+    PLIC_INT23_IRQn           = 23,
+    PLIC_INT24_IRQn           = 24,
+    PLIC_INT25_IRQn           = 25,
+    PLIC_INT26_IRQn           = 26,
+    PLIC_INT27_IRQn           = 27,
+    PLIC_INT28_IRQn           = 28,
+    PLIC_INT29_IRQn           = 29,
+    PLIC_INT30_IRQn           = 30,
+    PLIC_INT31_IRQn           = 31,
+    PLIC_INT32_IRQn           = 32,
+    PLIC_INT33_IRQn           = 33,
+    PLIC_INT34_IRQn           = 34,
+    PLIC_INT35_IRQn           = 35,
+    PLIC_INT36_IRQn           = 36,
+    PLIC_INT37_IRQn           = 37,
+    PLIC_INT38_IRQn           = 38,
+    PLIC_INT39_IRQn           = 39,
+    PLIC_INT40_IRQn           = 40,
+    PLIC_INT41_IRQn           = 41,
+    PLIC_INT42_IRQn           = 42,
+    PLIC_INT43_IRQn           = 43,
+    PLIC_INIT_MAX,
+#endif
+
+} IRQn_Type;
+
+// TODO not yet finialized
+#if defined(INTMODE) && (INTMODE != INTMODE_PLIC)
+/* UART0 Interrupt */
+#define UART0_IRQn                                 SOC_INT51_IRQn
+/* QSPI Interrupt */
+#define QSPI0_IRQn                                 SOC_INT53_IRQn
+#define QSPI1_IRQn                                 SOC_INT54_IRQn
+#define QSPI2_IRQn                                 SOC_INT55_IRQn
+#else
+/* UART0 Interrupt */
+#define UART0_IRQn                                 PLIC_INT33_IRQn
+/* QSPI Interrupt */
+#define QSPI0_IRQn                                 PLIC_INT35_IRQn
+#define QSPI1_IRQn                                 PLIC_INT36_IRQn
+#define QSPI2_IRQn                                 PLIC_INT37_IRQn
+#endif
+
+#define PLIC_UART0_IRQn                            PLIC_INT33_IRQn
 
 #include <nmsis_core.h>                         /*!< Nuclei N/NX class processor and core peripherals */
 /* ToDo: include your system_evalsoc.h file

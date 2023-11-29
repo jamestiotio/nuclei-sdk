@@ -142,6 +142,47 @@
 .endm
 
 /**
+ * \brief  Trap Entry
+ * \details
+ * This function provide common entry functions for trap.
+ * \remarks
+ * This function provide a default trap entry.
+ * ABI defined caller save register and some CSR registers
+ * to be saved before enter interrupt handler and be restored before return.
+ */
+.section .text.trap
+.align 6
+.global trap_entry
+.weak trap_entry
+trap_entry:
+    /* Save the caller saving registers (context) */
+    SAVE_CONTEXT
+    /* Save the necessary CSR registers */
+    SAVE_CSR_CONTEXT
+
+    /*
+     * Set the exception handler function arguments
+     * argument 1: mcause value
+     * argument 2: current stack point(SP) value
+     */
+    csrr a0, mcause
+    mv a1, sp
+    /*
+     * TODO: Call the trap handler function
+     * By default, the function template is provided in
+     * system_Device.c, you can adjust it as you want
+     */
+    call core_trap_handler
+
+    /* Restore the necessary CSR registers */
+    RESTORE_CSR_CONTEXT
+    /* Restore the caller saving registers (context) */
+    RESTORE_CONTEXT
+
+    /* Return to regular code */
+    mret
+
+/**
  * \brief  Exception/NMI Entry
  * \details
  * This function provide common entry functions for exception/nmi.

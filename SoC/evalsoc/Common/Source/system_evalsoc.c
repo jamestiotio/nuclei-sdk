@@ -276,6 +276,16 @@ void SystemInit(void)
  */
 static unsigned long SystemExceptionHandlers[MAX_SYSTEM_EXCEPTION_NUM + 1];
 
+#if defined(__PLIC_PRESENT) && (__PLIC_PRESENT == 1)
+static unsigned long SystemExtInterruptHandlers[__PLIC_INTNUM];
+#endif
+#define SYSTEM_CORE_INTNUM      12 // 0-11 stop at machine external interrupt
+static unsigned long SystemCoreInterruptHandlers[SYSTEM_CORE_INTNUM];
+
+uint32_t system_mmode_extirq_handler(unsigned long mcause, unsigned long sp);
+uint32_t system_smode_extirq_handler(unsigned long mcause, unsigned long sp);
+uint32_t core_exception_handler(unsigned long mcause, unsigned long sp);
+
 /**
  * \brief      Store the exception handlers for each exception ID in supervisor mode
  * \note
@@ -294,6 +304,7 @@ static unsigned long SystemExceptionHandlers_S[MAX_SYSTEM_EXCEPTION_NUM];
  * It is used to do type conversion for registered exception handler before calling it.
  */
 typedef void (*EXC_HANDLER)(unsigned long cause, unsigned long sp);
+typedef void (*INT_HANDLER)(unsigned long cause, unsigned long sp);
 
 /**
  * \brief      System Default Exception Handler
@@ -322,6 +333,19 @@ static void system_default_exception_handler(unsigned long mcause, unsigned long
 }
 
 /**
+ * \brief      System Default Interrupt Handler for CLINT/PLIC Interrupt Mode
+ * \details
+ * This function provided a default interrupt handling code for all interrupt ids.
+ */
+static void system_default_interrupt_handler(unsigned long mcause, unsigned long sp)
+{
+    /* TODO: Uncomment this if you have implement printf function */
+    printf("Trap in Interrupt\r\n");
+    printf("MCAUSE: 0x%lx\r\n", mcause);
+    printf("MEPC  : 0x%lx\r\n", __RV_CSR_READ(CSR_MEPC));
+    printf("MTVAL : 0x%lx\r\n", __RV_CSR_READ(CSR_MBADADDR));
+}
+/**
  * \brief      Initialize all the default core exception handlers
  * \details
  * The core exception handler for each exception id will be initialized to \ref system_default_exception_handler.
@@ -338,6 +362,91 @@ static void Exception_Init(void)
 #endif
     }
     SystemExceptionHandlers[MAX_SYSTEM_EXCEPTION_NUM] = (unsigned long)system_default_exception_handler;
+}
+
+/**
+ * \brief      Initialize all the default interrupt handlers
+ * \details
+ * The interrupt handler for each exception id will be initialized to \ref system_default_interrupt_handler.
+ * \note
+ * Called in \ref _init function, used to initialize default interrupt handlers for all interrupt IDs
+ */
+static void Interrupt_Init(void)
+{
+#if defined(__PLIC_PRESENT) && (__PLIC_PRESENT == 1)
+    int i;
+    for (i = 0; i < __PLIC_INTNUM; i++) {
+        SystemExtInterruptHandlers[i] = (unsigned long)system_default_interrupt_handler;
+    }
+    for (i = 0; i < SYSTEM_CORE_INTNUM; i++) {
+        SystemCoreInterruptHandlers[i] = (unsigned long)system_default_interrupt_handler;
+    }
+    SystemCoreInterruptHandlers[9] = (unsigned long)system_smode_extirq_handler;
+    SystemCoreInterruptHandlers[11] = (unsigned long)system_mmode_extirq_handler;
+#else
+    ECLIC_Init();
+#endif
+
+}
+
+/**
+ * \brief       Register an core interrupt handler for core interrupt number
+ * \details
+ * * For irqn <=  10, it will be registered into SystemCoreInterruptHandlers[irqn-1].
+ * \param   irqn    See \ref IRQn
+ * \param   int_handler     The core interrupt handler for this interrupt code irqn
+ */
+void Interrupt_Register_CoreIRQ(uint32_t irqn, unsigned long int_handler)
+{
+    if ((irqn < SYSTEM_CORE_INTNUM) && (irqn >= 0)) {
+        SystemCoreInterruptHandlers[irqn] = int_handler;
+    }
+}
+
+/**
+ * \brief       Register an external interrupt handler for plic external interrupt number
+ * \details
+ * * For irqn <= \ref __PLIC_INTNUM, it will be registered into SystemExtInterruptHandlers[irqn-1].
+ * \param   irqn    See \ref IRQn
+ * \param   int_handler     The external interrupt handler for this interrupt code irqn
+ */
+void Interrupt_Register_ExtIRQ(uint32_t irqn, unsigned long int_handler)
+{
+#if defined(__PLIC_PRESENT) && (__PLIC_PRESENT == 1)
+    if ((irqn < __PLIC_INTNUM) && (irqn >= 0)) {
+        SystemExtInterruptHandlers[irqn] = int_handler;
+    }
+#endif
+}
+
+/**
+ * \brief       Get an core interrupt handler for core interrupt number
+ * \param   irqn    See \ref IRQn
+ * \return
+ * The core interrupt handler for this interrupt code irqn
+ */
+unsigned long Interrupt_Get_CoreIRQ(uint32_t irqn)
+{
+    if ((irqn < SYSTEM_CORE_INTNUM) && (irqn >= 0)) {
+        return SystemCoreInterruptHandlers[irqn];
+    }
+    return 0;
+}
+
+/**
+ * \brief       Get an external interrupt handler for external interrupt number
+ * \param   irqn    See \ref IRQn
+ * \return
+ * The external interrupt handler for this interrupt code irqn
+ */
+unsigned long Interrupt_Get_ExtIRQ(uint32_t irqn)
+{
+#if defined(__PLIC_PRESENT) && (__PLIC_PRESENT == 1)
+    if ((irqn < __PLIC_INTNUM) && (irqn >= 0)) {
+        return SystemExtInterruptHandlers[irqn];
+    }
+#endif
+    return 0;
 }
 
 /**
@@ -408,6 +517,54 @@ unsigned long Exception_Get_EXC(uint32_t EXCn)
     }
 }
 
+/**
+ * \brief      Common trap entry
+ * \details
+ * This function provided a command entry for trap. Silicon Vendor could modify
+ * this template implementation according to requirement.
+ * \remarks
+ * - RISCV provided common entry for all types of exception including exception and interrupt.
+ *   This is proposed code template for exception entry function, Silicon Vendor could modify the implementation.
+ * - If you want to register core exception handler, please use \ref Exception_Register_EXC
+ * - If you want to register core interrupt handler, please use \ref Interrupt_Register_CoreIRQ
+ * - If you want to register external interrupt handler, please use \ref Interrupt_Register_ExtIRQ
+ */
+uint32_t core_trap_handler(unsigned long mcause, unsigned long sp)
+{
+    if (mcause & MCAUSE_INTR) {
+        INT_HANDLER int_handler = NULL;
+        uint32_t irqn = (uint32_t)(mcause & 0X00000fff);
+        int_handler = (INT_HANDLER)(SystemCoreInterruptHandlers[irqn]);
+        if (int_handler != NULL) {
+            int_handler(mcause, sp);
+        }
+        return 0;
+    } else {
+        return core_exception_handler(mcause, sp);
+    }
+}
+
+uint32_t system_mmode_extirq_handler(unsigned long mcause, unsigned long sp)
+{
+#if defined(__PLIC_PRESENT) && __PLIC_PRESENT == 1
+    uint32_t irqn = PLIC_ClaimInterrupt();
+    INT_HANDLER int_handler = NULL;
+    if (irqn < __PLIC_INTNUM) {
+        int_handler = (INT_HANDLER)(SystemExtInterruptHandlers[irqn]);
+        if (int_handler != NULL) {
+            int_handler(mcause, sp);
+        }
+    }
+    PLIC_CompleteInterrupt(irqn);
+#endif
+    return 0;
+}
+
+uint32_t system_smode_extirq_handler(unsigned long mcause, unsigned long sp)
+{
+    // TODO not yet implemented
+
+}
 /**
  * \brief      Common NMI and Exception handler entry
  * \details
@@ -603,6 +760,71 @@ int32_t ECLIC_Register_IRQ(IRQn_Type IRQn, uint8_t shv, ECLIC_TRIGGER_Type trig_
     return 0;
 }
 
+/**
+ * \brief  Register a riscv core interrupt and register the handler
+ * \details
+ * This function set interrupt handler for core interrupt
+ * \param [in]  irqn        interrupt number
+ * \param [in]  handler     interrupt handler, if NULL, handler will not be installed
+ * \return       -1 means invalid input parameter. 0 means successful.
+ * \remarks
+ * - This function use to configure riscv core interrupt and register its interrupt handler and enable its interrupt.
+ */
+int32_t Core_Register_IRQ(uint32_t irqn, void *handler)
+{
+    if ((irqn > SYSTEM_CORE_INTNUM)) {
+        return -1;
+    }
+
+    if (handler != NULL) {
+        /* register interrupt handler entry to core handlers */
+        Interrupt_Register_CoreIRQ(irqn, (unsigned long)handler);
+    }
+    switch (irqn) {
+        case SysTimerSW_IRQn:
+            __enable_sw_irq();
+            break;
+        case SysTimer_IRQn:
+            __enable_timer_irq();
+            break;
+        default:
+            break;
+    }
+
+    return 0;
+}
+
+#if defined(__PLIC_PRESENT) && __PLIC_PRESENT == 1
+/**
+ * \brief  Register a specific plic interrupt and register the handler
+ * \details
+ * This function set priority and handler for plic interrupt
+ * \param [in]  source      interrupt source
+ * \param [in]  priority    interrupt priority
+ * \param [in]  handler     interrupt handler, if NULL, handler will not be installed
+ * \return       -1 means invalid input parameter. 0 means successful.
+ * \remarks
+ * - This function use to configure specific plic interrupt and register its interrupt handler and enable its interrupt.
+ */
+int32_t PLIC_Register_IRQ(uint32_t source, uint8_t priority, void *handler)
+{
+    if ((source >= __PLIC_INTNUM)) {
+        return -1;
+    }
+
+    /* set interrupt priority */
+    PLIC_SetPriority(source, priority);
+    if (handler != NULL) {
+        /* register interrupt handler entry to external handlers */
+        Interrupt_Register_ExtIRQ(source, (unsigned long)handler);
+    }
+    /* enable interrupt */
+    PLIC_EnableInterrupt(source);
+    __enable_ext_irq();
+    return 0;
+}
+#endif
+
 #if defined(__TEE_PRESENT) && (__TEE_PRESENT == 1)
 /**
  * \brief  Initialize a specific IRQ and register the handler for supervisor mode
@@ -671,6 +893,7 @@ static void _get_iregion_info(IRegion_Info_Type *iregion)
         iregion->systimer_base = iregion->iregion_base + IREGION_TIMER_OFS;
         iregion->smp_base = iregion->iregion_base + IREGION_SMP_OFS;
         iregion->idu_base = iregion->iregion_base + IREGION_IDU_OFS;
+        iregion->plic_base = iregion->iregion_base + IREGION_PLIC_OFS;
     } else {
         iregion->eclic_base = FALLBACK_DEFAULT_ECLIC_BASE;
         iregion->systimer_base = FALLBACK_DEFAULT_SYSTIMER_BASE;
@@ -742,6 +965,8 @@ void __sync_harts(void)
  */
 static void Trap_Init(void)
 {
+#if defined(__PLIC_PRESENT) && (__PLIC_PRESENT == 1)
+#else
 #if defined(__TEE_PRESENT) && (__TEE_PRESENT == 1)
     /*
      * Intialize ECLIC supervisor mode vector interrupt
@@ -759,6 +984,7 @@ static void Trap_Init(void)
     /*
      * Set supervisor exception entry stvec to exc_entry_s */
     __RV_CSR_WRITE(CSR_STVEC, (unsigned long)&exc_entry_s);
+#endif
 #endif
 }
 
@@ -826,8 +1052,9 @@ void _premain_init(void)
         SystemBannerPrint();
         /* Initialize exception default handlers */
         Exception_Init();
-        /* ECLIC initialization, mainly MTH and NLBIT */
-        ECLIC_Init();
+        /* Interrupt initialization */
+        Interrupt_Init();
+        /* Extra trap initialization */
         Trap_Init();
         // TODO: internal usage for Nuclei
 #ifdef RUNMODE_CONTROL
