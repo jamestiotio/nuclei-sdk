@@ -647,6 +647,116 @@ __STATIC_FORCEINLINE void __disable_irq(void)
 }
 
 /**
+ * \brief   Enable External IRQ Interrupts
+ * \details Enables External IRQ interrupts by setting the MEIE-bit in the MIE Register.
+ * \remarks
+ *          Can only be executed in Privileged modes.
+ */
+__STATIC_FORCEINLINE void __enable_ext_irq(void)
+{
+    __RV_CSR_SET(CSR_MIE, MIE_MEIE);
+}
+
+/**
+ * \brief   Disable External IRQ Interrupts
+ * \details Disables External IRQ interrupts by clearing the MEIE-bit in the MIE Register.
+ * \remarks
+ *          Can only be executed in Privileged modes.
+ */
+__STATIC_FORCEINLINE void __disable_ext_irq(void)
+{
+    __RV_CSR_CLEAR(CSR_MIE, MIE_MEIE);
+}
+
+/**
+ * \brief   Enable Timer IRQ Interrupts
+ * \details Enables Timer IRQ interrupts by setting the MTIE-bit in the MIE Register.
+ * \remarks
+ *          Can only be executed in Privileged modes.
+ */
+__STATIC_FORCEINLINE void __enable_timer_irq(void)
+{
+    __RV_CSR_SET(CSR_MIE, MIE_MTIE);
+}
+
+/**
+ * \brief   Disable Timer IRQ Interrupts
+ * \details Disables Timer IRQ interrupts by clearing the MTIE-bit in the MIE Register.
+ * \remarks
+ *          Can only be executed in Privileged modes.
+ */
+__STATIC_FORCEINLINE void __disable_timer_irq(void)
+{
+    __RV_CSR_CLEAR(CSR_MIE, MIE_MTIE);
+}
+
+/**
+ * \brief   Enable software IRQ Interrupts
+ * \details Enables software IRQ interrupts by setting the MSIE-bit in the MIE Register.
+ * \remarks
+ *          Can only be executed in Privileged modes.
+ */
+__STATIC_FORCEINLINE void __enable_sw_irq(void)
+{
+    __RV_CSR_SET(CSR_MIE, MIE_MSIE);
+}
+
+/**
+ * \brief   Disable software IRQ Interrupts
+ * \details Disables software IRQ interrupts by clearing the MSIE-bit in the MIE Register.
+ * \remarks
+ *          Can only be executed in Privileged modes.
+ */
+__STATIC_FORCEINLINE void __disable_sw_irq(void)
+{
+    __RV_CSR_CLEAR(CSR_MIE, MIE_MSIE);
+}
+
+/**
+ * \brief   Disable Core IRQ Interrupt
+ * \details Disable Core IRQ interrupt by clearing the irq bit in the MIE Register.
+ * \remarks
+ *          Can only be executed in Privileged modes.
+ */
+__STATIC_FORCEINLINE void __disable_core_irq(uint32_t irq)
+{
+    __RV_CSR_CLEAR(CSR_MIE, 1 << irq);
+}
+
+/**
+ * \brief   Enable Core IRQ Interrupt
+ * \details Enable Core IRQ interrupt by setting the irq bit in the MIE Register.
+ * \remarks
+ *          Can only be executed in Privileged modes.
+ */
+__STATIC_FORCEINLINE void __enable_core_irq(uint32_t irq)
+{
+    __RV_CSR_SET(CSR_MIE, 1 << irq);
+}
+
+/**
+ * \brief   Get Core IRQ Interrupt Pending status
+ * \details Get Core IRQ interrupt pending status of irq bit.
+ * \remarks
+ *          Can only be executed in Privileged modes.
+ */
+__STATIC_FORCEINLINE uint32_t __get_core_irq_pending(uint32_t irq)
+{
+    return ((__RV_CSR_READ(CSR_MIP) >> irq) & 0x1);
+}
+
+
+/**
+ * \brief   Clear Core IRQ Interrupt Pending status
+ * \details Clear Core IRQ interrupt pending status of irq bit.
+ * \remarks
+ *          Can only be executed in Privileged modes.
+ */
+__STATIC_FORCEINLINE void __clear_core_irq_pending(uint32_t irq)
+{
+    __RV_CSR_SET(CSR_MIP, 1 << irq);
+}
+/**
  * \brief   Enable IRQ Interrupts in supervisor mode
  * \details Enables IRQ interrupts by setting the SIE-bit in the SSTATUS Register.
  * \remarks
