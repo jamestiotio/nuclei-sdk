@@ -305,6 +305,10 @@
 #define IREGION_DPREFETCH_OFS       (0x70000)
 #define IREGION_PLIC_OFS            (0x4000000)
 
+/* Interrupt mode definition */
+#define INTMODE_ECLIC       0       /*!< Eclic interrupt mode */
+#define INTMODE_PLIC        1       /*!< Plic interrupt mode */
+
 /* === Stack protect === */
 #define MSTACK_CTRL_MODE            (0x1<<2)
 #define MSTACK_CTRL_UDF_EN          (0x1<<1)
