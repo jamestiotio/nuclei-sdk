@@ -23,6 +23,7 @@
     ],
     "appdirs_ignore": [
         "application/baremetal/smphello",
+        "application/baremetal/demo_plic",
         "application/baremetal/demo_cidu",
         "application/baremetal/dsp_examples",
         "application/baremetal/Internal"
