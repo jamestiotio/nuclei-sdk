@@ -56,10 +56,6 @@ typedef enum {
     DOWNLOAD_MODE_MAX,
 } DownloadMode_Type;
 
-/* SoC Interrupt mode definition */
-#define INTMODE_ECLIC       0           /*!< Eclic interrupt mode */
-#define INTMODE_PLIC        1           /*!< Plic interrupt mode */
-
 /** \brief CPU Internal Region Information */
 typedef struct IRegion_Info {
     unsigned long iregion_base;         /*!< Internal region base address */

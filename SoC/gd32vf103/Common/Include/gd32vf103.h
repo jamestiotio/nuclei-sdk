@@ -61,10 +61,6 @@ typedef enum {
     DOWNLOAD_MODE_MAX,
 } DownloadMode_Type;
 
-/* SoC Interrupt mode definition */
-#define INTMODE_ECLIC       0           /*!< Eclic interrupt mode */
-#define INTMODE_PLIC        1           /*!< Plic interrupt mode */
-
 /* Simulation mode macros */
 #define SIMULATION_MODE_XLSPIKE   0     /*!< xlspike simulation mode */
 #define SIMULATION_MODE_QEMU      1     /*!< qemu simulation mode */

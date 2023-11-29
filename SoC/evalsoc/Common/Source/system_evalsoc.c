@@ -383,10 +383,10 @@ static void Interrupt_Init(void)
     }
     SystemCoreInterruptHandlers[9] = (unsigned long)system_smode_extirq_handler;
     SystemCoreInterruptHandlers[11] = (unsigned long)system_mmode_extirq_handler;
-#else
+#endif
+#if defined(__ECLIC_PRESENT) && (__ECLIC_PRESENT == 1)
     ECLIC_Init();
 #endif
-
 }
 
 /**
