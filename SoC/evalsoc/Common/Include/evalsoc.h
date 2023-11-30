@@ -28,6 +28,9 @@
 
 #include <stddef.h>
 
+// Provided macro INTMODE_PLIC and INTMODE_ECLIC
+#include <riscv_encoding.h>
+
 #ifdef __cplusplus
 extern "C" {
 #endif
@@ -69,7 +72,6 @@ typedef struct IRegion_Info {
 /* Simulation mode macros */
 #define SIMULATION_MODE_XLSPIKE   0     /*!< xlspike simulation mode */
 #define SIMULATION_MODE_QEMU      1     /*!< qemu simulation mode */
-
 
 /* =========================================================================================================================== */
 /* ================                                Interrupt Number Definition                                ================ */
